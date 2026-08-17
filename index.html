@@ -139,6 +139,20 @@
   .chip.active{background:var(--brown-dark);color:var(--gold-light);border-color:var(--brown-dark);}
   .chip:hover{border-color:var(--gold);}
 
+  /* ---------- brand filter ---------- */
+  .filter-row{
+    max-width:1200px;margin:0 auto;padding:2px 16px 12px;
+    display:flex;align-items:center;justify-content:flex-end;gap:8px;
+  }
+  .filter-row label{font-size:11.5px;color:var(--gold-dark);font-weight:600;letter-spacing:.03em;white-space:nowrap;}
+  .brand-select{
+    padding:8px 30px 8px 14px;border-radius:30px;border:1px solid var(--line);
+    background:var(--paper) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239C7A1E' stroke-width='2'><path d='M6 9l6 6 6-6'/></svg>") no-repeat right 10px center;
+    background-size:14px;appearance:none;-webkit-appearance:none;-moz-appearance:none;
+    font-size:13px;font-weight:500;color:var(--brown);cursor:pointer;transition:border-color .2s;
+  }
+  .brand-select:focus{outline:none;border-color:var(--gold);}
+
   /* ---------- hero ---------- */
   .hero{
     position:relative;overflow:hidden;
@@ -198,10 +212,19 @@
   .card .imgbox img{width:100%;height:100%;object-fit:contain;padding:6px;transition:transform .5s ease;}
   .card:hover .imgbox img{transform:scale(1.05);}
   .card .cat-badge{
-    position:absolute;top:9px;left:9px;background:rgba(46,30,18,.78);color:var(--gold-light);
-    font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;padding:3px 9px;border-radius:20px;
-    backdrop-filter:blur(2px);
-  }
+  position:absolute;
+  top:9px;
+  left:9px;
+  z-index:3;
+  background:rgba(46,30,18,.78);
+  color:var(--gold-light);
+  font-size:9.5px;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  padding:3px 9px;
+  border-radius:20px;
+  backdrop-filter:blur(2px);
+}
   .card .imgcount{
     position:absolute;bottom:9px;left:9px;background:rgba(255,255,255,.85);color:var(--brown-dark);
     font-size:9.5px;font-weight:600;padding:3px 8px;border-radius:20px;display:flex;align-items:center;gap:4px;
@@ -216,8 +239,9 @@
   .card:hover .quickview{opacity:1;transform:translateY(0);}
   .card .quickview svg{width:15px;height:15px;}
   .card .body{padding:11px 13px 13px;display:flex;flex-direction:column;gap:6px;flex:1;}
+  .card .pbrand{font-size:10.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--gold-dark);}
   .card .pname{font-size:13.5px;font-weight:500;color:var(--brown-dark);line-height:1.3;
-    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.5em;}
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
   .card .price{font-family:'Playfair Display',serif;font-weight:700;color:var(--gold-dark);font-size:16.5px;}
   .card .add-btn{
     margin-top:auto;border:1px solid var(--brown-dark);background:transparent;color:var(--brown-dark);
@@ -427,8 +451,8 @@
   .admin-top .at-brand{display:flex;align-items:center;gap:9px;font-family:'Playfair Display',serif;font-size:16px;}
   .admin-top .at-brand img{width:30px;height:30px;border-radius:50%;}
   .admin-top button{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);color:var(--gold-light);padding:8px 14px;border-radius:20px;font-size:12.5px;}
-  .admin-tabs{display:flex;gap:6px;padding:12px 18px 0;max-width:1100px;margin:0 auto;width:100%;}
-  .admin-tab{padding:9px 18px;border-radius:12px 12px 0 0;background:transparent;border:none;font-size:13.5px;font-weight:500;color:var(--brown);border-bottom:2px solid transparent;}
+  .admin-tabs{display:flex;gap:6px;padding:12px 18px 0;max-width:1100px;margin:0 auto;width:100%;overflow-x:auto;}
+  .admin-tab{padding:9px 18px;border-radius:12px 12px 0 0;background:transparent;border:none;font-size:13.5px;font-weight:500;color:var(--brown);border-bottom:2px solid transparent;white-space:nowrap;}
   .admin-tab.active{color:var(--brown-dark);border-bottom:2px solid var(--gold);font-weight:600;}
   .admin-body{max-width:1100px;margin:0 auto;padding:18px;width:100%;flex:1;}
   .admin-panel{display:none;}
@@ -532,6 +556,10 @@
     </button>
   </div>
   <div class="cats-wrap" id="catsWrap"></div>
+  <div class="filter-row" id="brandFilterWrap" style="display:none;">
+    <label for="brandFilter">Marca</label>
+    <select class="brand-select" id="brandFilter"></select>
+  </div>
 </header>
 
 <div class="hero">
@@ -709,6 +737,7 @@
     <div class="admin-tabs">
       <button class="admin-tab active" data-tab="productos">Productos</button>
       <button class="admin-tab" data-tab="categorias">Categorías</button>
+      <button class="admin-tab" data-tab="marcas">Marcas</button>
     </div>
     <div class="admin-body">
       <div class="demo-banner" id="demoBanner" style="display:none;">
@@ -744,6 +773,21 @@
         </div>
         <div class="admin-list" id="adminCategoryList"></div>
       </div>
+
+      <!-- MARCAS -->
+      <div class="admin-panel" id="panelMarcas">
+        <div class="toolbar">
+          <div class="search-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+            <input id="adminBrandSearch" placeholder="Buscar marca...">
+          </div>
+          <button class="btn-add" id="btnNewBrand">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+            Nueva marca
+          </button>
+        </div>
+        <div class="admin-list" id="adminBrandList"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -768,6 +812,10 @@
       <div class="field">
         <label>Categoría</label>
         <select id="pfCategory"></select>
+      </div>
+      <div class="field">
+        <label>Marca</label>
+        <select id="pfBrand"></select>
       </div>
       <div class="field">
         <label>Tallas o referencias disponibles</label>
@@ -809,6 +857,23 @@
   </div>
 </div>
 
+<!-- Modal marca -->
+<div class="modal-bg" id="brandModalBg">
+  <div class="modal">
+    <h3 id="brandModalTitle" class="serif">Nueva marca</h3>
+    <form id="brandForm">
+      <div class="field">
+        <label>Nombre de la marca</label>
+        <input type="text" id="bfName" required>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-outline" id="brandCancelBtn">Cancelar</button>
+        <button type="submit" class="btn-gold">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script type="module">
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
@@ -834,13 +899,16 @@ const IDLE_LIMIT_MS = 10 * 60 * 1000; // 10 minutos de inactividad -> cierre de 
 
 /* ---------------------------- estado ---------------------------- */
 let categories = [];
+let brands = [];
 let products = [];
 let cart = [];
 let activeCategory = 'all';
+let activeBrand = 'all';
 let searchTerm = '';
 let session = null;
 let editingProductId = null;
 let editingCategoryId = null;
+let editingBrandId = null;
 let productImages = []; // {url, isNew, file}
 let removedImageUrls = []; // urls de imágenes existentes quitadas en la edición (se borran del storage al guardar)
 let pfSizes = []; // tallas del producto en edición
@@ -857,15 +925,20 @@ function seedDemo(){
     { id:'c3', nombre:'Leggings' },
     { id:'c4', nombre:'Accesorios' },
   ];
+  brands = [
+    { id:'b1', nombre:'Lúa Mode' },
+    { id:'b2', nombre:'Nike' },
+    { id:'b3', nombre:'Adidas' },
+  ];
   products = [
-    { id:'p1', nombre:'Camiseta deportiva Pro', descripcion:'Tela transpirable, ideal para entrenar.', precio:69900, categoria_id:'c1', imagenes:['https://images.unsplash.com/photo-1556906781-9a412961c28c?w=500'], tallas:['S','M','L','XL'] },
-    { id:'p2', nombre:'Conjunto training gris', descripcion:'Top + short a juego.', precio:129900, categoria_id:'c2', imagenes:['https://images.unsplash.com/photo-1518310383802-640c2de311b2?w=500'], tallas:['S','M','L'] },
-    { id:'p3', nombre:'Legging control de abdomen', descripcion:'Compresión media, tiro alto.', precio:89900, categoria_id:'c3', imagenes:['https://images.unsplash.com/photo-1506629905607-c28b47e8b6b3?w=500'], tallas:['XS','S','M','L','XL'] },
-    { id:'p4', nombre:'Gorra deportiva dorada', descripcion:'Ajustable, bordado Lúa Mode.', precio:39900, categoria_id:'c4', imagenes:['https://images.unsplash.com/photo-1521369909029-2afed882baee?w=500'], tallas:[] },
-    { id:'p5', nombre:'Camiseta oversize', descripcion:'Corte relajado, algodón suave.', precio:59900, categoria_id:'c1', imagenes:['https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500'], tallas:['S','M','L'] },
-    { id:'p6', nombre:'Conjunto yoga lila', descripcion:'Top deportivo + legging.', precio:139900, categoria_id:'c2', imagenes:['https://images.unsplash.com/photo-1518611012118-696072aa579a?w=500'], tallas:['S','M','L'] },
-    { id:'p7', nombre:'Legging estampado', descripcion:'Diseño exclusivo Lúa Mode.', precio:94900, categoria_id:'c3', imagenes:['https://images.unsplash.com/photo-1506629082955-511b1aa562c8?w=500'], tallas:['S','M','L','XL'] },
-    { id:'p8', nombre:'Bolso deportivo', descripcion:'Amplio compartimento para tenis.', precio:74900, categoria_id:'c4', imagenes:['https://images.unsplash.com/photo-1547949003-9792a18a2645?w=500'], tallas:[] },
+    { id:'p1', nombre:'Camiseta deportiva Pro', descripcion:'Tela transpirable, ideal para entrenar.', precio:69900, categoria_id:'c1', marca_id:'b1', imagenes:['https://images.unsplash.com/photo-1556906781-9a412961c28c?w=500'], tallas:['S','M','L','XL'] },
+    { id:'p2', nombre:'Conjunto training gris', descripcion:'Top + short a juego.', precio:129900, categoria_id:'c2', marca_id:'b2', imagenes:['https://images.unsplash.com/photo-1518310383802-640c2de311b2?w=500'], tallas:['S','M','L'] },
+    { id:'p3', nombre:'Legging control de abdomen', descripcion:'Compresión media, tiro alto.', precio:89900, categoria_id:'c3', marca_id:'b1', imagenes:['https://images.unsplash.com/photo-1506629905607-c28b47e8b6b3?w=500'], tallas:['XS','S','M','L','XL'] },
+    { id:'p4', nombre:'Gorra deportiva dorada', descripcion:'Ajustable, bordado Lúa Mode.', precio:39900, categoria_id:'c4', marca_id:'b1', imagenes:['https://images.unsplash.com/photo-1521369909029-2afed882baee?w=500'], tallas:[] },
+    { id:'p5', nombre:'Camiseta oversize', descripcion:'Corte relajado, algodón suave.', precio:59900, categoria_id:'c1', marca_id:'b3', imagenes:['https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500'], tallas:['S','M','L'] },
+    { id:'p6', nombre:'Conjunto yoga lila', descripcion:'Top deportivo + legging.', precio:139900, categoria_id:'c2', marca_id:'b1', imagenes:['https://images.unsplash.com/photo-1518611012118-696072aa579a?w=500'], tallas:['S','M','L'] },
+    { id:'p7', nombre:'Legging estampado', descripcion:'Diseño exclusivo Lúa Mode.', precio:94900, categoria_id:'c3', marca_id:'b1', imagenes:['https://images.unsplash.com/photo-1506629082955-511b1aa562c8?w=500'], tallas:['S','M','L','XL'] },
+    { id:'p8', nombre:'Bolso deportivo', descripcion:'Amplio compartimento para tenis.', precio:74900, categoria_id:'c4', marca_id:'b2', imagenes:['https://images.unsplash.com/photo-1547949003-9792a18a2645?w=500'], tallas:[] },
   ];
 }
 
@@ -876,6 +949,12 @@ async function loadCategories(){
   if(error){ toast('Error al cargar categorías'); console.error(error); return; }
   categories = data || [];
 }
+async function loadBrands(){
+  if(DEMO_MODE) return;
+  const { data, error } = await supabase.from('marcas').select('*').order('nombre');
+  if(error){ toast('Error al cargar marcas'); console.error(error); return; }
+  brands = data || [];
+}
 async function loadProducts(){
   if(DEMO_MODE) return;
   const { data, error } = await supabase.from('productos').select('*').order('creado_en', { ascending:false });
@@ -884,9 +963,19 @@ async function loadProducts(){
 }
 async function refreshAll(){
   if(DEMO_MODE) seedDemo();
-  else { await loadCategories(); await loadProducts(); }
+  else { await loadCategories(); await loadBrands(); await loadProducts(); }
   renderCategoryChips();
+  renderBrandFilter();
   renderProducts();
+}
+
+function renderBrandFilter(){
+  const wrap = document.getElementById('brandFilterWrap');
+  const sel = document.getElementById('brandFilter');
+  if(brands.length === 0){ wrap.style.display = 'none'; return; }
+  wrap.style.display = 'flex';
+  sel.innerHTML = '<option value="all">Todas las marcas</option>' + brands.map(b=>`<option value="${b.id}">${escapeHtml(b.nombre)}</option>`).join('');
+  sel.value = activeBrand;
 }
 
 /* ---------------------------- render tienda ---------------------------- */
@@ -904,8 +993,11 @@ function renderCategoryChips(){
 function filteredProducts(){
   return products.filter(p => {
     const matchCat = activeCategory==='all' || p.categoria_id===activeCategory;
-    const matchSearch = !searchTerm || p.nombre.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchCat && matchSearch;
+    const matchBrand = activeBrand==='all' || p.marca_id===activeBrand;
+    const term = searchTerm.toLowerCase();
+    const brand = brands.find(b => b.id===p.marca_id);
+    const matchSearch = !term || p.nombre.toLowerCase().includes(term) || (brand && brand.nombre.toLowerCase().includes(term));
+    return matchCat && matchBrand && matchSearch;
   });
 }
 
@@ -921,6 +1013,7 @@ function renderProducts(){
   }
   grid.innerHTML = list.map(p => {
     const cat = categories.find(c => c.id===p.categoria_id);
+    const brand = brands.find(b => b.id===p.marca_id);
     const imgs = p.imagenes || [];
     const img = imgs[0] || '';
     return `
@@ -934,6 +1027,7 @@ function renderProducts(){
         ${imgs.length>1 ? `<span class="imgcount"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>${imgs.length}</span>` : ''}
       </div>
       <div class="body">
+        ${brand ? `<div class="pbrand">${escapeHtml(brand.nombre)}</div>` : ''}
         <div class="pname">${escapeHtml(p.nombre)}</div>
         <div class="price">${fmt(p.precio)}</div>
         <button class="add-btn" data-add="${p.id}">
@@ -1067,7 +1161,8 @@ function openProductView(id){
   pvQty = 1;
   pvSelectedSize = null;
   const cat = categories.find(c => c.id===p.categoria_id);
-  document.getElementById('pvCat').textContent = cat ? cat.nombre : '';
+  const brand = brands.find(b => b.id===p.marca_id);
+  document.getElementById('pvCat').textContent = [brand ? brand.nombre : '', cat ? cat.nombre : ''].filter(Boolean).join(' · ');
   document.getElementById('pvName').textContent = p.nombre;
   document.getElementById('pvPrice').textContent = fmt(p.precio);
   document.getElementById('pvDesc').textContent = p.descripcion || 'Sin descripción disponible.';
@@ -1161,11 +1256,13 @@ async function showDashboard(){
   document.getElementById('adminLoginView').style.display = 'none';
   document.getElementById('adminShell').classList.add('show');
   document.getElementById('demoBanner').style.display = DEMO_MODE ? 'block' : 'none';
-  if(!DEMO_MODE){ await loadCategories(); await loadProducts(); }
+  if(!DEMO_MODE){ await loadCategories(); await loadBrands(); await loadProducts(); }
   else if(categories.length===0){ seedDemo(); }
   renderAdminCategorySelect();
+  renderAdminBrandSelect();
   renderAdminProducts();
   renderAdminCategories();
+  renderAdminBrands();
   startIdleWatch();
 }
 
@@ -1230,13 +1327,18 @@ function renderAdminProducts(){
   if(list.length===0){ wrap.innerHTML = '<p style="color:var(--gold-dark);font-size:13px;">No se encontraron productos.</p>'; return; }
   wrap.innerHTML = list.map(p => {
     const cat = categories.find(c=>c.id===p.categoria_id);
+    const brand = brands.find(b=>b.id===p.marca_id);
     const img = (p.imagenes && p.imagenes[0]) || '';
+    const metaParts = [fmt(p.precio)];
+    metaParts.push(brand ? escapeHtml(brand.nombre) : 'Sin marca');
+    metaParts.push(cat ? escapeHtml(cat.nombre) : 'Sin categoría');
+    if(p.tallas && p.tallas.length) metaParts.push('Tallas: '+p.tallas.map(escapeHtml).join(', '));
     return `
     <div class="admin-row">
       ${img ? `<img src="${img}">` : '<div style="width:48px;height:48px;border-radius:10px;background:var(--cream-2);"></div>'}
       <div class="ar-info">
         <div class="ar-name">${escapeHtml(p.nombre)}</div>
-        <div class="ar-meta">${fmt(p.precio)} · ${cat ? escapeHtml(cat.nombre) : 'Sin categoría'}${(p.tallas&&p.tallas.length) ? ' · Tallas: '+p.tallas.map(escapeHtml).join(', ') : ''}</div>
+        <div class="ar-meta">${metaParts.join(' · ')}</div>
       </div>
       <div class="row-actions">
         <button class="edit" data-edit-p="${p.id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
@@ -1251,6 +1353,10 @@ function renderAdminProducts(){
 function renderAdminCategorySelect(){
   const sel = document.getElementById('pfCategory');
   sel.innerHTML = '<option value="">Sin categoría</option>' + categories.map(c=>`<option value="${c.id}">${escapeHtml(c.nombre)}</option>`).join('');
+}
+function renderAdminBrandSelect(){
+  const sel = document.getElementById('pfBrand');
+  sel.innerHTML = '<option value="">Sin marca</option>' + brands.map(b=>`<option value="${b.id}">${escapeHtml(b.nombre)}</option>`).join('');
 }
 
 function renderAdminCategories(){
@@ -1276,6 +1382,29 @@ function renderAdminCategories(){
   wrap.querySelectorAll('[data-del-c]').forEach(b=>b.addEventListener('click',()=>deleteCategory(b.dataset.delC)));
 }
 
+function renderAdminBrands(){
+  const term = document.getElementById('adminBrandSearch').value.toLowerCase();
+  const list = brands.filter(b => b.nombre.toLowerCase().includes(term));
+  const wrap = document.getElementById('adminBrandList');
+  if(list.length===0){ wrap.innerHTML = '<p style="color:var(--gold-dark);font-size:13px;">No se encontraron marcas.</p>'; return; }
+  wrap.innerHTML = list.map(b => {
+    const count = products.filter(p=>p.marca_id===b.id).length;
+    return `
+    <div class="admin-row">
+      <div class="ar-info">
+        <div class="ar-name">${escapeHtml(b.nombre)}</div>
+        <div class="ar-meta">${count} producto(s)</div>
+      </div>
+      <div class="row-actions">
+        <button class="edit" data-edit-b="${b.id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
+        <button class="del" data-del-b="${b.id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m2 0-1 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1L5 6"/></svg></button>
+      </div>
+    </div>`;
+  }).join('');
+  wrap.querySelectorAll('[data-edit-b]').forEach(b=>b.addEventListener('click',()=>openBrandForm(b.dataset.editB)));
+  wrap.querySelectorAll('[data-del-b]').forEach(b=>b.addEventListener('click',()=>deleteBrand(b.dataset.delB)));
+}
+
 /* ----- modal producto ----- */
 function openProductForm(id){
   editingProductId = id || null;
@@ -1285,6 +1414,7 @@ function openProductForm(id){
   document.getElementById('pfDesc').value = p ? (p.descripcion||'') : '';
   document.getElementById('pfPrice').value = p ? p.precio : '';
   document.getElementById('pfCategory').value = p ? (p.categoria_id||'') : '';
+  document.getElementById('pfBrand').value = p ? (p.marca_id||'') : '';
   productImages = p ? (p.imagenes||[]).map(url=>({url,isNew:false})) : [];
   removedImageUrls = [];
   pfSizes = p ? [...(p.tallas||[])] : [];
@@ -1391,13 +1521,14 @@ async function saveProduct(e){
     const descripcion = document.getElementById('pfDesc').value.trim();
     const precio = Number(document.getElementById('pfPrice').value);
     const categoria_id = document.getElementById('pfCategory').value || null;
+    const marca_id = document.getElementById('pfBrand').value || null;
 
     if(DEMO_MODE){
       if(editingProductId){
         const p = products.find(x=>x.id===editingProductId);
-        Object.assign(p, { nombre, descripcion, precio, categoria_id, imagenes: productImages.map(i=>i.url), tallas:[...pfSizes] });
+        Object.assign(p, { nombre, descripcion, precio, categoria_id, marca_id, imagenes: productImages.map(i=>i.url), tallas:[...pfSizes] });
       } else {
-        products.unshift({ id:uid(), nombre, descripcion, precio, categoria_id, imagenes: productImages.map(i=>i.url), tallas:[...pfSizes] });
+        products.unshift({ id:uid(), nombre, descripcion, precio, categoria_id, marca_id, imagenes: productImages.map(i=>i.url), tallas:[...pfSizes] });
       }
       toast('Producto guardado (modo demo)');
       finishProductSave();
@@ -1406,11 +1537,11 @@ async function saveProduct(e){
 
     const id = editingProductId || uid();
     if(!editingProductId){
-      const { error } = await supabase.from('productos').insert({ id, nombre, descripcion, precio, categoria_id, imagenes: [], tallas: pfSizes });
+      const { error } = await supabase.from('productos').insert({ id, nombre, descripcion, precio, categoria_id, marca_id, imagenes: [], tallas: pfSizes });
       if(error){ toast('Error al crear el producto'); console.error(error); return; }
     }
     const imagenes = await uploadPendingImages(id);
-    const { error: upErr } = await supabase.from('productos').update({ nombre, descripcion, precio, categoria_id, imagenes, tallas: pfSizes }).eq('id', id);
+    const { error: upErr } = await supabase.from('productos').update({ nombre, descripcion, precio, categoria_id, marca_id, imagenes, tallas: pfSizes }).eq('id', id);
     if(upErr){ toast('Error al guardar el producto'); console.error(upErr); return; }
 
     await deleteRemovedImages();
@@ -1517,6 +1648,77 @@ async function deleteCategory(id){
   renderAdminProducts();
 }
 
+/* ----- modal marca ----- */
+function openBrandForm(id){
+  editingBrandId = id || null;
+  const b = id ? brands.find(x=>x.id===id) : null;
+  document.getElementById('brandModalTitle').textContent = b ? 'Editar marca' : 'Nueva marca';
+  document.getElementById('bfName').value = b ? b.nombre : '';
+  document.getElementById('brandModalBg').classList.add('show');
+}
+function closeBrandForm(){
+  document.getElementById('brandModalBg').classList.remove('show');
+  document.getElementById('brandForm').reset();
+}
+let isSavingBrand = false;
+async function saveBrand(e){
+  e.preventDefault();
+  if(isSavingBrand) return;
+  const nombre = document.getElementById('bfName').value.trim();
+  if(!nombre) return;
+  const submitBtn = document.querySelector('#brandForm button[type="submit"]');
+  isSavingBrand = true;
+  if(submitBtn){ submitBtn.disabled = true; submitBtn.dataset.originalText = submitBtn.textContent; submitBtn.textContent = 'Guardando...'; }
+
+  try{
+    if(DEMO_MODE){
+      if(editingBrandId){ brands.find(b=>b.id===editingBrandId).nombre = nombre; }
+      else { brands.push({ id:uid(), nombre }); }
+      toast('Marca guardada (modo demo)');
+      finishBrandSave();
+      return;
+    }
+    if(editingBrandId){
+      const { error } = await supabase.from('marcas').update({ nombre }).eq('id', editingBrandId);
+      if(error){ toast('Error al guardar'); console.error(error); return; }
+    } else {
+      const { error } = await supabase.from('marcas').insert({ id:uid(), nombre });
+      if(error){ toast('Error al crear marca'); console.error(error); return; }
+    }
+    toast('Marca guardada');
+    await loadBrands();
+    finishBrandSave();
+  } finally {
+    isSavingBrand = false;
+    if(submitBtn){ submitBtn.disabled = false; submitBtn.textContent = submitBtn.dataset.originalText || 'Guardar'; }
+  }
+}
+function finishBrandSave(){
+  closeBrandForm();
+  renderAdminBrandSelect();
+  renderAdminBrands();
+  renderAdminProducts();
+  if(!brands.find(b=>b.id===activeBrand)) activeBrand = 'all';
+  renderBrandFilter();
+  renderProducts();
+}
+async function deleteBrand(id){
+  if(!confirm('¿Eliminar esta marca? Los productos asociados quedarán sin marca.')) return;
+  if(DEMO_MODE){
+    brands = brands.filter(b=>b.id!==id);
+    products.forEach(p=>{ if(p.marca_id===id) p.marca_id=null; });
+    toast('Marca eliminada (modo demo)');
+    finishBrandSave();
+    return;
+  }
+  const { error } = await supabase.from('marcas').delete().eq('id', id);
+  if(error){ toast('Error al eliminar'); console.error(error); return; }
+  toast('Marca eliminada');
+  await loadBrands(); await loadProducts();
+  finishBrandSave();
+  renderAdminProducts();
+}
+
 /* =========================================================================
    INIT
    ========================================================================= */
@@ -1527,6 +1729,9 @@ function init(){
 
   // búsqueda tienda
   document.getElementById('searchInput').addEventListener('input', (e)=>{ searchTerm = e.target.value; renderProducts(); });
+
+  // filtro por marca
+  document.getElementById('brandFilter').addEventListener('change', (e)=>{ activeBrand = e.target.value; renderProducts(); });
 
   // carrito
   document.getElementById('openCartBtn').addEventListener('click', openCart);
@@ -1560,6 +1765,7 @@ function init(){
   document.getElementById('productCancelBtn').addEventListener('click', closeProductForm);
   document.getElementById('productModalBg').addEventListener('click', (e)=>{ if(e.target.id==='productModalBg') closeProductForm(); });
   document.getElementById('categoryModalBg').addEventListener('click', (e)=>{ if(e.target.id==='categoryModalBg') closeCategoryForm(); });
+  document.getElementById('brandModalBg').addEventListener('click', (e)=>{ if(e.target.id==='brandModalBg') closeBrandForm(); });
   document.getElementById('uploadBox').addEventListener('click', ()=>document.getElementById('pfImages').click());
   document.getElementById('pfImages').addEventListener('change', (e)=>handleImageFiles(e.target.files));
   document.getElementById('pfSizeAddBtn').addEventListener('click', addSizeFromInput);
@@ -1571,12 +1777,19 @@ function init(){
   document.getElementById('categoryForm').addEventListener('submit', saveCategory);
   document.getElementById('categoryCancelBtn').addEventListener('click', closeCategoryForm);
 
+  // marcas admin
+  document.getElementById('adminBrandSearch').addEventListener('input', renderAdminBrands);
+  document.getElementById('btnNewBrand').addEventListener('click', ()=>openBrandForm(null));
+  document.getElementById('brandForm').addEventListener('submit', saveBrand);
+  document.getElementById('brandCancelBtn').addEventListener('click', closeBrandForm);
+
   handleHash();
   refreshAll();
 }
 function closeAllModals(){
   document.getElementById('productModalBg').classList.remove('show');
   document.getElementById('categoryModalBg').classList.remove('show');
+  document.getElementById('brandModalBg').classList.remove('show');
 }
 function handleHash(){
   if(location.hash === '#admin') openAdmin();
