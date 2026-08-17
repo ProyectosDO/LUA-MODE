@@ -104,6 +104,18 @@
     border:none;display:flex;align-items:center;justify-content:center;
     transition:transform .2s;
   }
+  @media(max-width:640px){
+  .cart-btn{
+    position:absolute;
+    top:10px;
+    right:16px;
+    z-index:5;
+  }
+
+  .header-inner{
+    position:relative;
+  }
+}
   .cart-btn:hover{transform:scale(1.05);}
   .cart-btn svg{width:19px;height:19px;}
   .cart-count{
@@ -1330,10 +1342,17 @@ function handleImageFiles(files){
 }
 
 function storagePathFromUrl(url){
-  const marker = `/object/public/${BUCKET}/`;
+  if(!url) return null;
+
+  const marker = `/storage/v1/object/public/${BUCKET}/`;
   const idx = url.indexOf(marker);
-  if(idx === -1) return null;
-  return url.slice(idx + marker.length);
+
+  if(idx === -1){
+    console.warn('No se pudo obtener la ruta de Storage:', url);
+    return null;
+  }
+
+  return decodeURIComponent(url.slice(idx + marker.length));
 }
 
 async function uploadPendingImages(productId){
