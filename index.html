@@ -538,10 +538,6 @@
         Diseños exclusivos
       </div>
       <div class="trust-pill">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-        Tela premium anti-sudor
-      </div>
-      <div class="trust-pill">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.77.46 3.44 1.32 4.9L2 22l5.31-1.39a9.9 9.9 0 0 0 4.73 1.2h.01c5.46 0 9.9-4.45 9.9-9.91C21.96 6.45 17.5 2 12.04 2z"/></svg>
         Atención por WhatsApp
       </div>
@@ -834,6 +830,7 @@ let session = null;
 let editingProductId = null;
 let editingCategoryId = null;
 let productImages = []; // {url, isNew, file}
+let removedImageUrls = []; // urls de imágenes existentes quitadas en la edición (se borran del storage al guardar)
 let pfSizes = []; // tallas del producto en edición
 let idleTimer = null;
 
@@ -1277,6 +1274,7 @@ function openProductForm(id){
   document.getElementById('pfPrice').value = p ? p.precio : '';
   document.getElementById('pfCategory').value = p ? (p.categoria_id||'') : '';
   productImages = p ? (p.imagenes||[]).map(url=>({url,isNew:false})) : [];
+  removedImageUrls = [];
   pfSizes = p ? [...(p.tallas||[])] : [];
   renderImgGrid();
   renderSizeChips();
@@ -1286,6 +1284,7 @@ function closeProductForm(){
   document.getElementById('productModalBg').classList.remove('show');
   document.getElementById('productForm').reset();
   productImages = [];
+  removedImageUrls = [];
   pfSizes = [];
   renderSizeChips();
 }
@@ -1315,7 +1314,10 @@ function renderImgGrid(){
       <button type="button" data-rm-img="${i}">✕</button>
     </div>`).join('');
   grid.querySelectorAll('[data-rm-img]').forEach(b=>b.addEventListener('click', ()=>{
-    productImages.splice(Number(b.dataset.rmImg),1);
+    const idx = Number(b.dataset.rmImg);
+    const removed = productImages[idx];
+    if(removed && !removed.isNew){ removedImageUrls.push(removed.url); }
+    productImages.splice(idx,1);
     renderImgGrid();
   }));
 }
@@ -1325,6 +1327,13 @@ function handleImageFiles(files){
     productImages.push({ url, isNew:true, file });
   });
   renderImgGrid();
+}
+
+function storagePathFromUrl(url){
+  const marker = `/object/public/${BUCKET}/`;
+  const idx = url.indexOf(marker);
+  if(idx === -1) return null;
+  return url.slice(idx + marker.length);
 }
 
 async function uploadPendingImages(productId){
@@ -1341,37 +1350,59 @@ async function uploadPendingImages(productId){
   return urls;
 }
 
+async function deleteRemovedImages(){
+  if(DEMO_MODE || removedImageUrls.length===0) return;
+  const paths = removedImageUrls.map(storagePathFromUrl).filter(Boolean);
+  if(paths.length===0) return;
+  const { error } = await supabase.storage.from(BUCKET).remove(paths);
+  if(error) console.error('Error eliminando imágenes del storage', error);
+  removedImageUrls = [];
+}
+
+let isSavingProduct = false;
 async function saveProduct(e){
   e.preventDefault();
-  const nombre = document.getElementById('pfName').value.trim();
-  const descripcion = document.getElementById('pfDesc').value.trim();
-  const precio = Number(document.getElementById('pfPrice').value);
-  const categoria_id = document.getElementById('pfCategory').value || null;
+  if(isSavingProduct) return;
+  const submitBtn = document.querySelector('#productForm button[type="submit"]');
+  isSavingProduct = true;
+  if(submitBtn){ submitBtn.disabled = true; submitBtn.dataset.originalText = submitBtn.textContent; submitBtn.textContent = 'Guardando...'; }
 
-  if(DEMO_MODE){
-    if(editingProductId){
-      const p = products.find(x=>x.id===editingProductId);
-      Object.assign(p, { nombre, descripcion, precio, categoria_id, imagenes: productImages.map(i=>i.url), tallas:[...pfSizes] });
-    } else {
-      products.unshift({ id:uid(), nombre, descripcion, precio, categoria_id, imagenes: productImages.map(i=>i.url), tallas:[...pfSizes] });
+  try{
+    const nombre = document.getElementById('pfName').value.trim();
+    const descripcion = document.getElementById('pfDesc').value.trim();
+    const precio = Number(document.getElementById('pfPrice').value);
+    const categoria_id = document.getElementById('pfCategory').value || null;
+
+    if(DEMO_MODE){
+      if(editingProductId){
+        const p = products.find(x=>x.id===editingProductId);
+        Object.assign(p, { nombre, descripcion, precio, categoria_id, imagenes: productImages.map(i=>i.url), tallas:[...pfSizes] });
+      } else {
+        products.unshift({ id:uid(), nombre, descripcion, precio, categoria_id, imagenes: productImages.map(i=>i.url), tallas:[...pfSizes] });
+      }
+      toast('Producto guardado (modo demo)');
+      finishProductSave();
+      return;
     }
-    toast('Producto guardado (modo demo)');
+
+    const id = editingProductId || uid();
+    if(!editingProductId){
+      const { error } = await supabase.from('productos').insert({ id, nombre, descripcion, precio, categoria_id, imagenes: [], tallas: pfSizes });
+      if(error){ toast('Error al crear el producto'); console.error(error); return; }
+    }
+    const imagenes = await uploadPendingImages(id);
+    const { error: upErr } = await supabase.from('productos').update({ nombre, descripcion, precio, categoria_id, imagenes, tallas: pfSizes }).eq('id', id);
+    if(upErr){ toast('Error al guardar el producto'); console.error(upErr); return; }
+
+    await deleteRemovedImages();
+
+    toast('Producto guardado');
+    await loadProducts();
     finishProductSave();
-    return;
+  } finally {
+    isSavingProduct = false;
+    if(submitBtn){ submitBtn.disabled = false; submitBtn.textContent = submitBtn.dataset.originalText || 'Guardar'; }
   }
-
-  const id = editingProductId || uid();
-  if(!editingProductId){
-    const { error } = await supabase.from('productos').insert({ id, nombre, descripcion, precio, categoria_id, imagenes: [], tallas: pfSizes });
-    if(error){ toast('Error al crear el producto'); console.error(error); return; }
-  }
-  const imagenes = await uploadPendingImages(id);
-  const { error: upErr } = await supabase.from('productos').update({ nombre, descripcion, precio, categoria_id, imagenes, tallas: pfSizes }).eq('id', id);
-  if(upErr){ toast('Error al guardar el producto'); console.error(upErr); return; }
-
-  toast('Producto guardado');
-  await loadProducts();
-  finishProductSave();
 }
 function finishProductSave(){
   closeProductForm();
@@ -1410,28 +1441,38 @@ function closeCategoryForm(){
   document.getElementById('categoryModalBg').classList.remove('show');
   document.getElementById('categoryForm').reset();
 }
+let isSavingCategory = false;
 async function saveCategory(e){
   e.preventDefault();
+  if(isSavingCategory) return;
   const nombre = document.getElementById('cfName').value.trim();
   if(!nombre) return;
+  const submitBtn = document.querySelector('#categoryForm button[type="submit"]');
+  isSavingCategory = true;
+  if(submitBtn){ submitBtn.disabled = true; submitBtn.dataset.originalText = submitBtn.textContent; submitBtn.textContent = 'Guardando...'; }
 
-  if(DEMO_MODE){
-    if(editingCategoryId){ categories.find(c=>c.id===editingCategoryId).nombre = nombre; }
-    else { categories.push({ id:uid(), nombre }); }
-    toast('Categoría guardada (modo demo)');
+  try{
+    if(DEMO_MODE){
+      if(editingCategoryId){ categories.find(c=>c.id===editingCategoryId).nombre = nombre; }
+      else { categories.push({ id:uid(), nombre }); }
+      toast('Categoría guardada (modo demo)');
+      finishCategorySave();
+      return;
+    }
+    if(editingCategoryId){
+      const { error } = await supabase.from('categorias').update({ nombre }).eq('id', editingCategoryId);
+      if(error){ toast('Error al guardar'); console.error(error); return; }
+    } else {
+      const { error } = await supabase.from('categorias').insert({ id:uid(), nombre });
+      if(error){ toast('Error al crear categoría'); console.error(error); return; }
+    }
+    toast('Categoría guardada');
+    await loadCategories();
     finishCategorySave();
-    return;
+  } finally {
+    isSavingCategory = false;
+    if(submitBtn){ submitBtn.disabled = false; submitBtn.textContent = submitBtn.dataset.originalText || 'Guardar'; }
   }
-  if(editingCategoryId){
-    const { error } = await supabase.from('categorias').update({ nombre }).eq('id', editingCategoryId);
-    if(error){ toast('Error al guardar'); console.error(error); return; }
-  } else {
-    const { error } = await supabase.from('categorias').insert({ id:uid(), nombre });
-    if(error){ toast('Error al crear categoría'); console.error(error); return; }
-  }
-  toast('Categoría guardada');
-  await loadCategories();
-  finishCategorySave();
 }
 function finishCategorySave(){
   closeCategoryForm();
